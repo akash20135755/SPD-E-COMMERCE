@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - E-Commerce</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="account_page.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-brand">E-Commerce</div>
+        <ul class="navbar-links">
+            <li><a href="home_page.html">Home</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="account_page.html">My Account</a></li>
+            <li><a href="login.html">Logout</a></li>
+        </ul>
+    </nav>
+
+    <!-- My Account Content -->
+    <div class="account-container">
+        <div class="account-sidebar">
+            <ul>
+                <li><a href="#personal-info">Personal Information</a></li>
+                <li><a href="#order-history">Order History</a></li>
+                <li><a href="#account-settings">Account Settings</a></li>
+            </ul>
+        </div>
+        <div class="account-content">
+            <!-- Personal Information Section -->
+            <section id="personal-info">
+                <h2>Personal Information</h2>
+                <form id="personalInfoForm">
+                    <div class="input-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" name="firstName" value="John" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" value="Doe" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" value="john.doe@example.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" value="123-456-7890" required>
+                    </div>
+                    <button type="submit">Save Changes</button>
+                </form>
+            </section>
+
+            <!-- Order History Section -->
+            <section id="order-history">
+                <h2>Order History</h2>
+                <div class="order">
+                    <h3>Order #12345</h3>
+                    <p>Date: 2023-07-01</p>
+                    <p>Status: Shipped</p>
+                    <button>View Details</button>
+                </div>
+                <div class="order">
+                    <h3>Order #12346</h3>
+                    <p>Date: 2023-06-15</p>
+                    <p>Status: Delivered</p>
+                    <button>View Details</button>
+                </div>
+                <!-- Add more orders as needed -->
+            </section>
+
+            <!-- Account Settings Section -->
+            <section id="account-settings">
+                <h2>Account Settings</h2>
+                <form id="accountSettingsForm">
+                    <div class="input-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" name="currentPassword" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="confirmNewPassword">Confirm New Password</label>
+                        <input type="password" id="confirmNewPassword" name="confirmNewPassword" required>
+                    </div>
+                    <button type="submit">Update Password</button>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
