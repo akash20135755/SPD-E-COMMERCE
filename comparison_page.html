@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Comparison</title>
+    <link rel="stylesheet" href="home_page.html">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table th, .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .comparison-table th {
+            background-color: #f2f2f2;
+        }
+
+        .comparison-row {
+            background-color: #f9f9f9;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Product Comparison</h1>
+        <p id="product-name"></p>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Website</th>
+                    <th>Price</th>
+                    <th>Discount</th>
+                    <th>Offers</th>
+                </tr>
+            </thead>
+            <tbody id="comparison-data">
+                <!-- Comparison data will be dynamically inserted here -->
+            </tbody>
+        </table>
+        <a href="index.html" class="back-link">Back to Home</a>
+    </div>
+
+    <script>
+        // Function to get query parameter
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Retrieve the product name from the URL
+        const productName = getQueryParam('product');
+
+        // Update the product name display
+        document.getElementById('product-name').textContent = `Comparing prices for: ${productName}`;
+
+        // Mock comparison data for demonstration
+        const comparisonData = {
+            'Sample Product 1': [
+                { website: 'Amazon', price: '$9.50', discount: '5%', offers: 'Free shipping' },
+                { website: 'Flipkart', price: '$9.75', discount: '3%', offers: '10% cashback' },
+            ],
+            'Sample Product 2': [
+                { website: 'Amazon', price: '$14.00', discount: '7%', offers: 'Free shipping' },
+                { website: 'Flipkart', price: '$14.25', discount: '5%', offers: '5% cashback' },
+            ],
+            'Sample Product 3': [
+                { website: 'Amazon', price: '$18.00', discount: '10%', offers: 'Free gift' },
+                { website: 'Flipkart', price: '$19.00', discount: '5%', offers: 'Free shipping' },
+            ],
+            'Sample Product 4': [
+                { website: 'Amazon', price: '$22.00', discount: '12%', offers: 'Free shipping' },
+                { website: 'Flipkart', price: '$23.50', discount: '8%', offers: '15% cashback' },
+            ],
+            'Sample Product 5': [
+                { website: 'Amazon', price: '$23.00', discount: '8%', offers: 'Free shipping' },
+                { website: 'Flipkart', price: '$24.00', discount: '6%', offers: '10% cashback' },
+            ],
+        };
+
+        // Insert comparison data into the table
+        const tableBody = document.getElementById('comparison-data');
+        const data = comparisonData[productName];
+
+        if (data) {
+            data.forEach(entry => {
+                const row = document.createElement('tr');
+                row.classList.add('comparison-row');
+                row.innerHTML = `
+                    <td>${entry.website}</td>
+                    <td>${entry.price}</td>
+                    <td>${entry.discount}</td>
+                    <td>${entry.offers}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } else {
+            tableBody.innerHTML = '<tr><td colspan="4">No comparison data available for this product.</td></tr>';
+        }
+    </script>
+</body>
+</html>
