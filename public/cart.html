@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - E-Commerce</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa, #e3f2fd);
+            padding: 20px;
+        }
+
+        .navbar {
+            background-color: #00796b;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .navbar-links {
+            list-style-type: none;
+        }
+
+        .navbar-links li {
+            display: inline;
+            margin-left: 20px;
+        }
+
+        .navbar-links a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .search-form {
+            display: flex;
+            align-items: center;
+        }
+
+        .search-form input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-left: 20px;
+        }
+
+        .search-form button {
+            padding: 5px 10px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .search-form button:hover {
+            background-color: #004d40;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: fadeInUp 0.5s forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .cart-table th, .cart-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .cart-table th {
+            background-color: #2e9a8f;
+            color: white;
+        }
+
+        .cart-table button {
+            background-color: #1e7a72;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .cart-table button:hover {
+            background-color: #175f5a;
+            transform: scale(1.05);
+        }
+
+        .cart-table button.remove {
+            background-color: #dc3545;
+        }
+
+        .cart-table button.remove:hover {
+            background-color: #c82333;
+        }
+
+        .cart-summary {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: fadeInUp 0.6s forwards;
+        }
+
+        .cart-summary h2 {
+            margin-top: 0;
+        }
+
+        .cart-summary p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .empty-cart {
+            text-align: center;
+            font-size: 20px;
+            color: #999;
+        }
+
+        .cart-summary button {
+            background-color: #1e7a72;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .cart-summary button:hover {
+            background-color: #175f5a;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">E-Commerce</div>
+        <form class="search-form" action="/search" method="GET">
+            <input type="text" placeholder="Search..." name="query" required>
+            <button type="submit">Search</button>
+        </form>
+        <ul class="navbar-links">
+            <li><a href="home_page.html">Home</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="account_page.html">My Account</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h1>Your Shopping Cart</h1>
+        
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price (₹)</th>
+                    <th>Quantity</th>
+                    <th>Total (₹)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="cart-items">
+                <!-- Cart items will be populated here -->
+            </tbody>
+        </table>
+        
+        <div class="empty-cart" id="empty-cart-message" style="display: none;">
+            Your cart is empty.
+        </div>
+
+        <div class="cart-summary">
+            <h2>Cart Summary</h2>
+            <p>Total Items: <span id="total-items">0</span></p>
+            <p>Total Price: <span id="total-price">0.00</span></p>
+            <button onclick="checkout()">Proceed to Checkout</button>
+        </div>
+    </div>
+
+    <script>
+        async function fetchCart() {
+            const response = await fetch('/api/cart');
+            const cart = await response.json();
+            return cart;
+        }
+
+        async function renderCart() {
+            const cartItemsContainer = document.getElementById('cart-items');
+            const emptyCartMessage = document.getElementById('empty-cart-message');
+            const cart = await fetchCart();
+            let totalItems = 0;
+            let totalPrice = 0;
+
+            cartItemsContainer.innerHTML = '';
+            emptyCartMessage.style.display = cart.length === 0 ? 'block' : 'none';
+
+            cart.forEach(item => {
+                totalItems += parseInt(item.quantity);
+                totalPrice += item.price * item.quantity;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.productName}</td>
+                    <td>₹${item.price.toFixed(2)}</td>
+                    <td>${item.quantity}</td>
+                    <td>₹${(item.price * item.quantity).toFixed(2)}</td>
+                    <td><button class="remove" onclick="removeFromCart('${item.productName}')">Remove</button></td>
+                `;
+                cartItemsContainer.appendChild(row);
+            });
+
+            document.getElementById('total-items').textContent = totalItems;
+            document.getElementById('total-price').textContent = totalPrice.toFixed(2);
+        }
+
+        async function removeFromCart(productName) {
+            await fetch('/api/cart/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ productName })
+            });
+            renderCart();
+        }
+
+        function checkout() {
+            window.location.href = 'checkout.html';
+        }
+
+        // Initialize cart page
+        renderCart();
+    </script>
+</body>
+</html>

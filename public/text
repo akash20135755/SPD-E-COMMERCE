@@ -1,0 +1,211 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const path = require('path');
+const session = require('express-session');
+
+const app = express();
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(session({
+    secret: 'your_secret_key', // Change this to a strong secret
+    resave: false,
+    saveUninitialized: true,
+}));
+
+mongoose.connect('mongodb://localhost:27017/spd')
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.error('MongoDB connection error:', err));
+
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    phone: { type: String },
+    address: { type: String }
+});
+
+const User = mongoose.model('User', userSchema);
+
+// Order Schema
+const orderSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+    products: [{ productName: String, price: Number, quantity: Number }],
+    totalAmount: Number,
+    paymentMethod: String,
+    createdAt: { type: Date, default: Date.now }
+});
+
+const Order = mongoose.model('Order', orderSchema);
+
+function isAuthenticated(req, res, next) {
+    if (req.session.userId) {
+        return next();
+    } else {
+        res.status(401).json({ message: 'Unauthorized' });
+    }
+}
+
+app.post('/api/cart/add', isAuthenticated, (req, res) => {
+    const { productName, price, quantity } = req.body;
+    if (!req.session.cart) {
+        req.session.cart = [];
+    }
+    const existingItem = req.session.cart.find(item => item.productName === productName);
+
+    if (existingItem) {
+        existingItem.quantity += quantity;
+    } else {
+        req.session.cart.push({ productName, price, quantity });
+    }
+
+    res.json({ message: 'Product added to cart', cart: req.session.cart });
+});
+
+app.post('/api/cart/remove', isAuthenticated, (req, res) => {
+    const { productName } = req.body;
+    req.session.cart = req.session.cart.filter(item => item.productName !== productName);
+    res.json({ message: 'Product removed from cart', cart: req.session.cart });
+});
+
+app.get('/api/cart', isAuthenticated, (req, res) => {
+    res.json(req.session.cart || []);
+});
+
+app.post('/api/cart/checkout', isAuthenticated, (req, res) => {
+    const cart = req.session.cart || [];
+    res.json({ message: 'Proceeding to checkout', cart });
+});
+
+app.post('/register', async (req, res) => {
+    const { username, email, password, phone, address } = req.body;
+    try {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: 'Email already in use' });
+        }
+        const newUser = new User({ username, email, password, phone, address });
+        await newUser.save();
+        return res.json({ success: true, message: 'User registered successfully' });
+    } catch (error) {
+        console.error('Registration error:', error);
+        return res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user || user.password !== password) {
+            return res.status(401).json({ success: false, message: 'Invalid email or password' });
+        }
+        req.session.userId = user._id;
+        return res.json({ success: true });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+app.get('/api/user', isAuthenticated, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json(user);
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.put('/api/update-user', isAuthenticated, async (req, res) => {
+    const { username, email, phone, address } = req.body;
+    try {
+        await User.findByIdAndUpdate(req.session.userId, { username, email, phone, address });
+        res.json({ message: 'User information updated successfully' });
+    } catch (error) {
+        console.error('Error updating user information:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.put('/api/update-password', isAuthenticated, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    try {
+        const user = await User.findById(req.session.userId);
+        if (user.password !== currentPassword) {
+            return res.status(401).json({ message: 'Current password is incorrect' });
+        }
+        user.password = newPassword;
+        await user.save();
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Error updating password:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ message: 'Logout failed' });
+        }
+        res.json({ message: 'Logged out successfully' });
+    });
+});
+
+app.post('/process-payment', isAuthenticated, async (req, res) => {
+    const { cardNumber, expiryDate, cvv, cardholderName } = req.body;
+    const cart = req.session.cart || [];
+
+    // Calculate total amount
+    const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    // Create a new order
+    const newOrder = new Order({
+        userId: req.session.userId,
+        products: cart,
+        totalAmount,
+        paymentMethod: 'card' // Customize this if needed
+    });
+
+    await newOrder.save();
+    // Clear the cart after saving the order
+    req.session.cart = [];
+
+    console.log('Processing card payment:', { cardNumber, expiryDate, cardholderName });
+    res.json({ success: true, message: 'Card payment processed successfully' });
+});
+
+app.get('/api/orders', isAuthenticated, async (req, res) => {
+    try {
+        const orders = await Order.find({ userId: req.session.userId });
+        res.json(orders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/register', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/paymentc', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'paymentc.html'));
+});
+
+app.listen(3000, () => {
+    console.log('Server running on http://localhost:3000');
+});

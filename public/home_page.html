@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - E-Kart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+       * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa, #e3f2fd);
+            padding: 20px;
+        }
+
+        .navbar {
+            background-color: #00796b;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .navbar-links {
+            list-style-type: none;
+        }
+
+        .navbar-links li {
+            display: inline;
+            margin-left: 20px;
+        }
+
+        .navbar-links a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .search-form {
+            display: flex;
+            align-items: center;
+        }
+
+        .search-form input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-left: 20px;
+        }
+
+        .search-form button {
+            padding: 5px 10px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .search-form button:hover {
+            background-color: #004d40;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .product-card {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .product-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .product-card h3 {
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+        .product-card p {
+            font-size: 1.1em;
+            color: #28a745;
+        }
+        .product-card input {
+            width: 50px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .product-card button,
+        .product-card a {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .product-card button {
+            background-color: #007bff;
+            color: white;
+        }
+        .compare-button {
+            background-color: #ffc107;
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">E-Kart</div>
+        <form class="search-form" action="/search" method="GET">
+            <input type="text" placeholder="Search..." name="query" required>
+            <button type="submit">Search</button>
+        </form>
+        <ul class="navbar-links">
+            <li><a href="home_page.html">Home</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="account_page.html">My Account</a></li>
+        </ul>
+    </nav>
+   
+    <div id="product-grid" class="product-grid"></div>
+
+    <script>
+        async function fetchProducts() {
+            try {
+                const response = await fetch('/api/products');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const products = await response.json();
+                return products;
+            } catch (error) {
+                console.error('Error fetching products:', error);
+                return [];
+            }
+        }
+
+        async function renderProducts() {
+    try {
+        const products = await fetchProducts();
+        const productGrid = document.getElementById('product-grid');
+        productGrid.innerHTML = '';
+
+        products.forEach((product) => {
+            const productCard = document.createElement('div');
+            productCard.classList.add('product-card');
+
+            const compareButton = document.createElement('button');
+            compareButton.innerText = 'Compare';
+            compareButton.onclick = () => {
+                window.location.href = `comparison_page.html?product=${encodeURIComponent(product.name)}`;
+            };
+
+            productCard.innerHTML = `
+                <img src="${product.imageUrl}" alt="${product.name}">
+                <h3>${product.name}</h3>
+                <p>₹${product.price}</p>
+
+                <input type="number" value="1" min="1">
+                <button onclick="addToCart('${product.name}', ${product.price}, event)">Add to Cart</button>
+            `;
+
+            productCard.appendChild(compareButton);
+            productGrid.appendChild(productCard);
+        });
+    } catch (error) {
+        console.error('Error rendering products:', error);
+        const productGrid = document.getElementById('product-grid');
+        productGrid.innerHTML = '<p>Failed to load products. Please try again later.</p>';
+    }
+}
+
+async function addToCart(productName, price, event) {
+    const inputField = event.target.previousElementSibling; // Get the quantity input field
+    const quantity = parseInt(inputField.value); // Get the quantity
+
+    if (isNaN(quantity) || quantity <= 0) {
+        alert("Please enter a valid quantity."); // Validation
+        return;
+    }
+
+    await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ productName, price, quantity })
+    });
+
+    // Optionally update a cart icon or message here
+}
+
+        renderProducts();
+    </script>
+</body>
+</html>

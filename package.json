@@ -8,8 +8,15 @@
   },
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "��#\u0000 \u0000S\u0000P\u0000D\u0000-\u0000E\u0000_\u0000C\u0000O\u0000M\u0000M\u0000E\u0000R\u0000C\u0000E\u0000\r\u0000 \u0000",
   "dependencies": {
-    "express": "^4.19.2"
-  }
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "mongoose": "^8.6.3",
+    "nodemon": "^3.1.7",
+    "puppeteer": "^23.4.0"
+  },
+  "keywords": []
 }

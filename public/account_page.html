@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - E-Commerce</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+       
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa, #e3f2fd);
+            padding: 20px;
+        }
+
+        .navbar {
+            background-color: #00796b;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .navbar-links {
+            list-style-type: none;
+        }
+
+        .navbar-links li {
+            display: inline;
+            margin-left: 20px;
+        }
+
+        .navbar-links a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .search-form {
+            display: flex;
+            align-items: center;
+        }
+
+        .search-form input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-left: 20px;
+        }
+
+        .search-form button {
+            padding: 5px 10px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .search-form button:hover {
+            background-color: #004d40;
+        }
+
+        .account-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .account-sidebar {
+            width: 20%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .account-sidebar ul {
+            list-style-type: none;
+        }
+
+        .account-sidebar ul li {
+            margin-bottom: 20px;
+        }
+
+        .account-sidebar a {
+            text-decoration: none;
+            color: #00796b;
+            font-weight: 500;
+        }
+
+        .account-content {
+            width: 75%;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #004d40;
+        }
+
+        @media (max-width: 768px) {
+            .account-container {
+                flex-direction: column;
+            }
+
+            .account-sidebar {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+
+            .account-content {
+                width: 100%;
+            }
+        }
+    
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">E-Commerce</div>
+        <form class="search-form" action="/search" method="GET">
+            <input type="text" placeholder="Search..." name="query" required>
+            <button type="submit">Search</button>
+        </form>
+        <ul class="navbar-links">
+            <li><a href="home_page.html">Home</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="account_page.html">My Account</a></li>
+            <li><a href="index.html">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="account-container">
+        <div class="account-sidebar">
+            <ul>
+                <li><a href="#" class="nav-link" data-target="personal-info">Personal Information</a></li>
+                <li><a href="#" class="nav-link" data-target="order-history">Order History</a></li>
+                <li><a href="#" class="nav-link" data-target="account-settings">Account Settings</a></li>
+            </ul>
+        </div>
+        <div class="account-content">
+            <section id="personal-info" style="display: block;">
+                <h2>Personal Information</h2>
+                <br>
+                <form id="personalInfoForm">
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="address">Address</label>
+                        <input type="text" id="address" name="address" required>
+                    </div>
+                    <button type="submit">Save Changes</button>
+                </form>
+            </section>
+
+            <section id="order-history" style="display: none;">
+                <h2>Order History</h2>
+                <br>
+                <div id="orderList"></div>
+            </section>
+            
+
+            <section id="account-settings" style="display: none;">
+                <h2>Account Settings</h2>
+                <form id="accountSettingsForm">
+                    <br>
+                    <div class="input-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" name="currentPassword" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" required>
+                    </div>
+                    <button type="submit">Update Password</button>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        async function fetchUserData() {
+            const response = await fetch('/api/user');
+            if (response.ok) {
+                const user = await response.json();
+                document.getElementById('username').value = user.username;
+                document.getElementById('email').value = user.email;
+                document.getElementById('phone').value = user.phone;
+                document.getElementById('address').value = user.address; // Add address field
+            } else {
+                console.error('Failed to fetch user data');
+            }
+        }
+        async function fetchOrderHistory() {
+    const response = await fetch('/api/orders');
+    if (response.ok) {
+        const orders = await response.json();
+        const orderList = document.getElementById('orderList');
+        orderList.innerHTML = '';
+
+        if (orders.length === 0) {
+            orderLi
+            st.innerHTML = '<p>No orders found.</p>';
+            return;
+        }
+
+        orders.forEach(order => {
+            const orderDiv = document.createElement('div');
+            orderDiv.innerHTML = `
+                <h3>Order ID: ${order._id}</h3>
+                <p>Total Amount: ₹${order.totalAmount}</p>
+                <p>Payment Method: ${order.paymentMethod}</p>
+                <p>Ordered On: ${new Date(order.createdAt).toLocaleString()}</p>
+                <h4>Products:</h4>
+                <ul>
+                    ${order.products.map(product => `<li>${product.productName} - ${product.quantity} x ₹${product.price}</li>`).join('')}
+                </ul>
+            `;
+            orderList.appendChild(orderDiv);
+        });
+    } else {
+        console.error('Failed to fetch order history');
+    }
+}
+
+        async function fetchOrderHistory() {
+            const response = await fetch('/api/orders');
+            if (response.ok) {
+                const orders = await response.json();
+                const orderList = document.getElementById('orderList');
+                orderList.innerHTML = '';
+
+                if (orders.length === 0) {
+                    orderList.innerHTML = '<p>No orders found.</p>';
+                    return;
+                }
+
+                orders.forEach(order => {
+                    const orderDiv = document.createElement('div');
+                    orderDiv.innerHTML = `
+                        <h3>Order ID: ${order._id}</h3>
+                        <p>Total Amount: $${order.totalAmount}</p>
+                        <p>Payment Method: ${order.paymentMethod}</p>
+                        <p>Ordered On: ${new Date(order.createdAt).toLocaleString()}</p>
+                        <h4>Products:</h4>
+                        <ul>
+                            ${order.products.map(product => `<li>${product.productName} - ${product.quantity} x $${product.price}</li>`).join('')}
+                        </ul>
+                    `;
+                    orderList.appendChild(orderDiv);
+                });
+            } else {
+                console.error('Failed to fetch order history');
+            }
+        }
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                
+                // Hide all sections
+                document.querySelectorAll('section').forEach(section => {
+                    section.style.display = 'none';
+                });
+                
+                // Show the targeted section
+                const targetId = link.getAttribute('data-target');
+                document.getElementById(targetId).style.display = 'block';
+
+                // Fetch order history if the target is order history
+                if (targetId === 'order-history') {
+                    fetchOrderHistory();
+                }
+            });
+        });
+
+        document.getElementById('personalInfoForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = {
+                username: event.target.username.value,
+                email: event.target.email.value,
+                phone: event.target.phone.value,
+                address: event.target.address.value, // Include address in the data
+            };
+
+            const response = await fetch('/api/update-user', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            if (response.ok) {
+                alert('Profile information updated successfully.');
+            } else {
+                alert('Failed to update information.');
+            }
+        });
+
+        document.getElementById('accountSettingsForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = {
+                currentPassword: event.target.currentPassword.value,
+                newPassword: event.target.newPassword.value,
+            };
+
+            const response = await fetch('/api/update-password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            if (response.ok) {
+                alert('Password updated successfully.');
+            } else {
+                alert('Failed to update password.');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', fetchUserData);
+    </script>
+</body>
+</html>
