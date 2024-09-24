@@ -9,7 +9,7 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
-    secret: 'your_secret_key', // Change this to a strong secret
+    secret: 'your_secret_key',
     resave: false,
     saveUninitialized: true,
 }));

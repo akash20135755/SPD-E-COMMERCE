@@ -1,211 +1,183 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const path = require('path');
-const session = require('express-session');
-
-const app = express();
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use(session({
-    secret: 'your_secret_key', // Change this to a strong secret
-    resave: false,
-    saveUninitialized: true,
-}));
-
-mongoose.connect('mongodb://localhost:27017/spd')
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.error('MongoDB connection error:', err));
-
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    phone: { type: String },
-    address: { type: String }
-});
-
-const User = mongoose.model('User', userSchema);
-
-// Order Schema
-const orderSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-    products: [{ productName: String, price: Number, quantity: Number }],
-    totalAmount: Number,
-    paymentMethod: String,
-    createdAt: { type: Date, default: Date.now }
-});
-
-const Order = mongoose.model('Order', orderSchema);
-
-function isAuthenticated(req, res, next) {
-    if (req.session.userId) {
-        return next();
-    } else {
-        res.status(401).json({ message: 'Unauthorized' });
-    }
-}
-
-app.post('/api/cart/add', isAuthenticated, (req, res) => {
-    const { productName, price, quantity } = req.body;
-    if (!req.session.cart) {
-        req.session.cart = [];
-    }
-    const existingItem = req.session.cart.find(item => item.productName === productName);
-
-    if (existingItem) {
-        existingItem.quantity += quantity;
-    } else {
-        req.session.cart.push({ productName, price, quantity });
-    }
-
-    res.json({ message: 'Product added to cart', cart: req.session.cart });
-});
-
-app.post('/api/cart/remove', isAuthenticated, (req, res) => {
-    const { productName } = req.body;
-    req.session.cart = req.session.cart.filter(item => item.productName !== productName);
-    res.json({ message: 'Product removed from cart', cart: req.session.cart });
-});
-
-app.get('/api/cart', isAuthenticated, (req, res) => {
-    res.json(req.session.cart || []);
-});
-
-app.post('/api/cart/checkout', isAuthenticated, (req, res) => {
-    const cart = req.session.cart || [];
-    res.json({ message: 'Proceeding to checkout', cart });
-});
-
-app.post('/register', async (req, res) => {
-    const { username, email, password, phone, address } = req.body;
-    try {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ success: false, message: 'Email already in use' });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - E-Commerce</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        const newUser = new User({ username, email, password, phone, address });
-        await newUser.save();
-        return res.json({ success: true, message: 'User registered successfully' });
-    } catch (error) {
-        console.error('Registration error:', error);
-        return res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
 
-app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const user = await User.findOne({ email });
-        if (!user || user.password !== password) {
-            return res.status(401).json({ success: false, message: 'Invalid email or password' });
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa, #e3f2fd);
+            padding: 20px;
         }
-        req.session.userId = user._id;
-        return res.json({ success: true });
-    } catch (error) {
-        return res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
 
-app.get('/api/user', isAuthenticated, async (req, res) => {
-    try {
-        const user = await User.findById(req.session.userId).select('-password');
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        .navbar {
+            background-color: #00796b;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        res.json(user);
-    } catch (error) {
-        console.error('Error fetching user:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
 
-app.put('/api/update-user', isAuthenticated, async (req, res) => {
-    const { username, email, phone, address } = req.body;
-    try {
-        await User.findByIdAndUpdate(req.session.userId, { username, email, phone, address });
-        res.json({ message: 'User information updated successfully' });
-    } catch (error) {
-        console.error('Error updating user information:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
-app.put('/api/update-password', isAuthenticated, async (req, res) => {
-    const { currentPassword, newPassword } = req.body;
-    try {
-        const user = await User.findById(req.session.userId);
-        if (user.password !== currentPassword) {
-            return res.status(401).json({ message: 'Current password is incorrect' });
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
         }
-        user.password = newPassword;
-        await user.save();
-        res.json({ message: 'Password updated successfully' });
-    } catch (error) {
-        console.error('Error updating password:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
 
-app.post('/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            return res.status(500).json({ message: 'Logout failed' });
+        .navbar-links {
+            list-style-type: none;
         }
-        res.json({ message: 'Logged out successfully' });
-    });
-});
 
-app.post('/process-payment', isAuthenticated, async (req, res) => {
-    const { cardNumber, expiryDate, cvv, cardholderName } = req.body;
-    const cart = req.session.cart || [];
+        .navbar-links li {
+            display: inline;
+            margin-left: 20px;
+        }
 
-    // Calculate total amount
-    const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        .navbar-links a {
+            color: white;
+            text-decoration: none;
+        }
 
-    // Create a new order
-    const newOrder = new Order({
-        userId: req.session.userId,
-        products: cart,
-        totalAmount,
-        paymentMethod: 'card' // Customize this if needed
-    });
+        .search-form {
+            display: flex;
+            align-items: center;
+        }
 
-    await newOrder.save();
-    // Clear the cart after saving the order
-    req.session.cart = [];
+        .search-form input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-left: 20px;
+        }
 
-    console.log('Processing card payment:', { cardNumber, expiryDate, cardholderName });
-    res.json({ success: true, message: 'Card payment processed successfully' });
-});
+        .search-form button {
+            padding: 5px 10px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
 
-app.get('/api/orders', isAuthenticated, async (req, res) => {
-    try {
-        const orders = await Order.find({ userId: req.session.userId });
-        res.json(orders);
-    } catch (error) {
-        console.error('Error fetching orders:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
+        .search-form button:hover {
+            background-color: #004d40;
+        }
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
 
-app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'register.html'));
-});
+        .container h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
 
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
+        .container label {
+            display: block;
+            margin: 15px 0 5px;
+        }
 
-app.get('/paymentc', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'paymentc.html'));
-});
+        .container input, .container select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
 
-app.listen(3000, () => {
-    console.log('Server running on http://localhost:3000');
-});
+        .container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .container button:hover {
+            background-color: #004d40;
+        }
+
+        .container .payment-method {
+            display: none;
+        }
+    </style>
+    <script>
+        function showPaymentFields() {
+            const paymentMethod = document.getElementById('payment-method').value;
+            const creditDebitFields = document.getElementById('credit-debit-fields');
+            const upiFields = document.getElementById('upi-fields');
+
+            creditDebitFields.style.display = paymentMethod === 'credit' || paymentMethod === 'debit' ? 'block' : 'none';
+            upiFields.style.display = paymentMethod === 'upi' ? 'block' : 'none';
+        }
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">E-Commerce</div>
+        <form class="search-form" action="/search" method="GET">
+            <input type="text" placeholder="Search..." name="query" required>
+            <button type="submit">Search</button>
+        </form>
+        <ul class="navbar-links">
+            <li><a href="home_page.html">Home</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="account_page.html">My Account</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Payment Details</h1>
+
+        <label for="payment-method">Select Payment Method</label>
+        <select id="payment-method" onchange="showPaymentFields()" required>
+            <option value="">-- Select Payment Method --</option>
+            <option value="credit">Credit Card</option>
+            <option value="debit">Debit Card</option>
+            <option value="upi">UPI</option>
+        </select>
+
+        <div id="credit-debit-fields" class="payment-method">
+            <label for="cardNumber">Card Number</label>
+            <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9123 4567" required>
+
+            <label for="expiryDate">Expiry Date</label>
+            <input type="text" id="expiryDate" name="expiryDate" placeholder="MM/YY" required>
+
+            <label for="cvv">CVV</label>
+            <input type="text" id="cvv" name="cvv" placeholder="123" required>
+
+            <label for="cardholderName">Cardholder Name</label>
+            <input type="text" id="cardholderName" name="cardholderName" placeholder="John Doe" required>
+
+            <button type="button" onclick="window.location.href='paymentc.html';">Pay Now</button>
+        </div>
+
+        <div id="upi-fields" class="payment-method">
+            <label for="upi-id">UPI ID</label>
+            <input type="text" id="upi-id" name="upi-id" placeholder="example@upi" required>
+
+            <button type="button" onclick="window.location.href='paymentc.html';">Pay Now</button>
+        </div>
+    </div>
+</body>
+</html>
