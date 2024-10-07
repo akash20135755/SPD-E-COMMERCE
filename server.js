@@ -266,56 +266,48 @@ app.post('/logout', (req, res) => {
 
 
 // Checkout route
-app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
-    const cart = await Cart.findOne({ userId: req.session.userId });
-    if (!cart || cart.items.length === 0) {
-        return res.status(400).json({ message: 'Cart is empty' });
+app.post('/api/cart/checkout', async (req, res) => {
+    const { method } = req.body;
+    const userId = req.session.userId; // Assume userId is stored in session
+
+    if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    const { method } = req.body;
-
     try {
-        // Check stock availability
+        const cart = await Cart.findOne({ userId: userId });
+
+        if (!cart || cart.items.length === 0) {
+            return res.status(400).json({ message: 'Cart is empty' });
+        }
+
+        const products = await Product.find({ name: { $in: cart.items.map(item => item.productName) } });
+        let totalAmount = 0;
+
         for (const item of cart.items) {
-            const product = await Product.findOne({ name: item.productName });
-            if (!product) {
-                return res.status(404).json({ message: `Product ${item.productName} not found` });
-            }
-            if (product.stock < item.quantity) {
+            const product = products.find(p => p.name === item.productName);
+            if (!product || product.stock < item.quantity) {
                 return res.status(400).json({ message: `Insufficient stock for ${item.productName}` });
             }
+            totalAmount += product.price * item.quantity;
+            product.stock -= item.quantity;
+            await product.save(); // Update stock in the database
         }
 
-        // Calculate total amount
-        const totalAmount = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        
-        // Create new order
-        const newOrder = new Order({
-            userId: req.session.userId,
+        const order = new Order({
+            userId: userId,
             products: cart.items,
             totalAmount,
-            paymentMethod: method,
+            paymentMethod: method
         });
 
-        await newOrder.save();
+        await order.save();
+        await Cart.deleteOne({ userId: userId }); // Clear the cart after checkout
 
-        // Deduct stock from products
-        for (const item of cart.items) {
-            const product = await Product.findOne({ name: item.productName });
-            product.stock -= item.quantity;
-            await product.save();
-        }
-
-        // Clear cart after checkout
-        await Cart.deleteOne({ userId: req.session.userId });
-
-        // Fetch updated order history for the user
-        const orders = await Order.find({ userId: req.session.userId }).sort({ createdAt: -1 });
-
-        return res.json({ message: 'Order placed successfully', orderId: newOrder._id, orders });
+        res.status(200).json({ message: 'Order placed successfully', orderId: order._id });
     } catch (error) {
         console.error('Error during checkout:', error);
-        return res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
 
