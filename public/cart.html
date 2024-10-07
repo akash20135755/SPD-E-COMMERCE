@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -222,7 +223,7 @@
             <h2>Cart Summary</h2>
             <p>Total Items: <span id="total-items">0</span></p>
             <p>Total Price: <span id="total-price">0.00</span></p>
-            <button onclick="checkout()">Proceed to Checkout</button>
+            <button onclick="handleCheckout()">Proceed to Checkout</button>
         </div>
     </div>
 
@@ -277,8 +278,29 @@
             window.location.href = 'checkout.html';
         }
 
+        async function handleCheckout() {
+    const response = await fetch('/api/cart/checkout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ method: 'credit card' }), // Example payment method
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+        // Update your order history UI with data.orders
+        console.log('Order placed successfully', data.orderId);
+        updateOrderHistory(data.orders); // Function to refresh order history UI
+    } else {
+        console.error('Checkout failed:', data.message);
+    }
+}
+
+
         // Initialize cart page
         renderCart();
     </script>
 </body>
 </html>
+
