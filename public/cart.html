@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -279,28 +278,17 @@
         }
 
         async function handleCheckout() {
-    const response = await fetch('/api/cart/checkout', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ method: 'credit card' }), // Example payment method
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-        // Update your order history UI with data.orders
-        console.log('Order placed successfully', data.orderId);
-        updateOrderHistory(data.orders); // Function to refresh order history UI
-    } else {
-        console.error('Checkout failed:', data.message);
-    }
-}
-
+            const cart = await fetchCart();
+            if (cart.length > 0) {
+                window.localStorage.setItem('cart', JSON.stringify(cart)); // Store cart in localStorage
+                window.location.href = 'checkout.html';
+            } else {
+                alert('Your cart is empty.');
+            }
+        }
 
         // Initialize cart page
         renderCart();
     </script>
 </body>
 </html>
-

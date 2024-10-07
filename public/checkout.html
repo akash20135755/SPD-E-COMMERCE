@@ -129,6 +129,33 @@
             creditDebitFields.style.display = paymentMethod === 'credit' || paymentMethod === 'debit' ? 'block' : 'none';
             upiFields.style.display = paymentMethod === 'upi' ? 'block' : 'none';
         }
+
+        async function submitPayment() {
+            const paymentMethod = document.getElementById('payment-method').value;
+
+            try {
+                const response = await fetch('/api/cart/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ method: paymentMethod })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    // Optionally, redirect to the orders page or homepage
+                    window.location.href = 'account_page.html'; // Redirect to orders page
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
     </script>
 </head>
 <body>
@@ -169,14 +196,14 @@
             <label for="cardholderName">Cardholder Name</label>
             <input type="text" id="cardholderName" name="cardholderName" placeholder="John Doe" required>
 
-            <button type="button" onclick="window.location.href='paymentc.html';">Pay Now</button>
+            <button type="button" onclick="submitPayment()">Pay Now</button>
         </div>
 
         <div id="upi-fields" class="payment-method">
             <label for="upi-id">UPI ID</label>
             <input type="text" id="upi-id" name="upi-id" placeholder="example@upi" required>
 
-            <button type="button" onclick="window.location.href='paymentc.html';">Pay Now</button>
+            <button type="button" onclick="submitPayment()">Pay Now</button>
         </div>
     </div>
 </body>

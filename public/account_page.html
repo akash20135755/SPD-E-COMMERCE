@@ -149,7 +149,41 @@
                 width: 100%;
             }
         }
-    
+        .order-history div {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.order-history div:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.order-history h3 {
+    font-size: 1.2rem;
+    color: #00796b;
+}
+
+.order-history p {
+    margin: 5px 0;
+}
+
+.order-history ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.order-history ul li {
+    background-color: #e0f7fa;
+    padding: 5px;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
     </style>
 </head>
 <body>
@@ -286,7 +320,7 @@
                     const orderDiv = document.createElement('div');
                     orderDiv.innerHTML = `
                         <h3>Order ID: ${order._id}</h3>
-                        <p>Total Amount: $${order.totalAmount}</p>
+                        <p>Total Amount: ${order.totalAmount}</p>
                         <p>Payment Method: ${order.paymentMethod}</p>
                         <p>Ordered On: ${new Date(order.createdAt).toLocaleString()}</p>
                         <h4>Products:</h4>
