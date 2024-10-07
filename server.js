@@ -15,7 +15,7 @@ app.use(session({
 }));
 
 // MongoDB connection
-mongoose.connect('mongodb://localhost:27017/spd')
+mongoose.connect('mongodb+srv://saran:1234@cluster0.nsdhf.mongodb.net/')
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error('MongoDB connection error:', err));
 
@@ -50,6 +50,15 @@ const orderSchema = new mongoose.Schema({
     paymentMethod: String,
     createdAt: { type: Date, default: Date.now }
 });
+
+// Cart schema and model
+const cartSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+    items: [{ productName: String, price: Number, quantity: Number }]
+});
+
+const Cart = mongoose.model('Cart', cartSchema);
+
 
 const Order = mongoose.model('Order', orderSchema);
 
@@ -89,44 +98,59 @@ app.get('/api/products/:name', async (req, res) => {
 });
 
 // Add product to cart
-app.post('/api/cart/add', isAuthenticated, (req, res) => {
+// Add product to cart
+app.post('/api/cart/add', isAuthenticated, async (req, res) => {
     const { productName, price, quantity } = req.body;
 
-    if (!req.session.cart) {
-        req.session.cart = [];
+    let cart = await Cart.findOne({ userId: req.session.userId });
+
+    if (!cart) {
+        cart = new Cart({ userId: req.session.userId, items: [] });
     }
 
-    const existingItem = req.session.cart.find(item => item.productName === productName);
+    const existingItem = cart.items.find(item => item.productName === productName);
 
     if (existingItem) {
         existingItem.quantity += quantity;
     } else {
-        req.session.cart.push({ productName, price, quantity });
+        cart.items.push({ productName, price, quantity });
     }
 
-    res.json({ message: 'Product added to cart', cart: req.session.cart });
+    await cart.save();
+    res.json({ message: 'Product added to cart', cart: cart.items });
 });
 
 // Remove product from cart
-app.post('/api/cart/remove', isAuthenticated, (req, res) => {
+// Remove product from cart
+app.post('/api/cart/remove', isAuthenticated, async (req, res) => {
     const { productName } = req.body;
 
-    if (req.session.cart) {
-        req.session.cart = req.session.cart.filter(item => item.productName !== productName);
+    let cart = await Cart.findOne({ userId: req.session.userId });
+    if (cart) {
+        cart.items = cart.items.filter(item => item.productName !== productName);
+        await cart.save();
     }
 
-    res.json({ message: 'Product removed from cart', cart: req.session.cart });
+    res.json({ message: 'Product removed from cart', cart: cart ? cart.items : [] });
 });
 
 // Fetch cart contents
-app.get('/api/cart', isAuthenticated, (req, res) => {
-    res.json(req.session.cart || []);
+app.get('/api/cart', isAuthenticated, async (req, res) => {
+    try {
+        let cart = await Cart.findOne({ userId: req.session.userId });
+        res.json(cart ? cart.items : []);
+    } catch (error) {
+        console.error('Error fetching cart:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
+
+// Checkout route
 // Checkout route
 app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
-    const cart = req.session.cart || [];
-    if (cart.length === 0) {
+    const cart = await Cart.findOne({ userId: req.session.userId });
+    if (!cart || cart.items.length === 0) {
         return res.status(400).json({ message: 'Cart is empty' });
     }
 
@@ -134,7 +158,7 @@ app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
 
     try {
         // Check stock availability
-        for (const item of cart) {
+        for (const item of cart.items) {
             const product = await Product.findOne({ name: item.productName });
             if (!product) {
                 return res.status(404).json({ message: `Product ${item.productName} not found` });
@@ -145,10 +169,10 @@ app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
         }
 
         // Deduct stock and create order
-        const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const totalAmount = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const newOrder = new Order({
             userId: req.session.userId,
-            products: cart,
+            products: cart.items,
             totalAmount,
             paymentMethod: method,
         });
@@ -156,19 +180,21 @@ app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
         await newOrder.save();
 
         // Deduct stock from products
-        for (const item of cart) {
+        for (const item of cart.items) {
             const product = await Product.findOne({ name: item.productName });
             product.stock -= item.quantity;
             await product.save();
         }
 
-        req.session.cart = []; // Clear cart after checkout
+        // Clear cart after checkout
+        await Cart.deleteOne({ userId: req.session.userId });
         return res.json({ message: 'Order placed successfully', orderId: newOrder._id });
     } catch (error) {
         console.error('Error during checkout:', error);
         return res.status(500).json({ message: 'Server error' });
     }
 });
+
 
 
 // Register new user
@@ -238,7 +264,64 @@ app.post('/logout', (req, res) => {
     });
 });
 
+
+// Checkout route
+app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
+    const cart = await Cart.findOne({ userId: req.session.userId });
+    if (!cart || cart.items.length === 0) {
+        return res.status(400).json({ message: 'Cart is empty' });
+    }
+
+    const { method } = req.body;
+
+    try {
+        // Check stock availability
+        for (const item of cart.items) {
+            const product = await Product.findOne({ name: item.productName });
+            if (!product) {
+                return res.status(404).json({ message: `Product ${item.productName} not found` });
+            }
+            if (product.stock < item.quantity) {
+                return res.status(400).json({ message: `Insufficient stock for ${item.productName}` });
+            }
+        }
+
+        // Calculate total amount
+        const totalAmount = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        
+        // Create new order
+        const newOrder = new Order({
+            userId: req.session.userId,
+            products: cart.items,
+            totalAmount,
+            paymentMethod: method,
+        });
+
+        await newOrder.save();
+
+        // Deduct stock from products
+        for (const item of cart.items) {
+            const product = await Product.findOne({ name: item.productName });
+            product.stock -= item.quantity;
+            await product.save();
+        }
+
+        // Clear cart after checkout
+        await Cart.deleteOne({ userId: req.session.userId });
+
+        // Fetch updated order history for the user
+        const orders = await Order.find({ userId: req.session.userId }).sort({ createdAt: -1 });
+
+        return res.json({ message: 'Order placed successfully', orderId: newOrder._id, orders });
+    } catch (error) {
+        console.error('Error during checkout:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Start server
 app.listen(3000, () => {
     console.log('Server running on http://localhost:3000');
 });
+
+
