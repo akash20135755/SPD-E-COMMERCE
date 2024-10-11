@@ -135,6 +135,7 @@ app.post('/api/cart/remove', isAuthenticated, async (req, res) => {
 });
 
 // Fetch cart contents
+
 app.get('/api/cart', isAuthenticated, async (req, res) => {
     try {
         let cart = await Cart.findOne({ userId: req.session.userId });
@@ -211,6 +212,32 @@ app.post('/register', async (req, res) => {
     } catch (error) {
         console.error('Registration error:', error);
         return res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+app.post('/api/user/update', isAuthenticated, async (req, res) => {
+    try {
+        // Find the user by session ID and exclude the password field
+        const user = await User.findById(req.session.userId).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update the user's profile information from the request body
+        const { username, email, phone, address } = req.body;
+        user.username = username || user.username;
+        user.email = email || user.email;
+        user.phone = phone || user.phone;
+        user.address = address || user.address;
+
+        // Save the updated user info
+        await user.save();
+
+        // Respond with success message
+        res.json({ message: 'Profile updated successfully', user });
+    } catch (error) {
+        // Handle any errors
+        console.error('Error updating user profile:', error);
+        res.status(500).json({ message: 'Failed to update profile', error: error.message });
     }
 });
 
@@ -315,5 +342,3 @@ app.post('/api/cart/checkout', async (req, res) => {
 app.listen(3000, () => {
     console.log('Server running on http://localhost:3000');
 });
-
-

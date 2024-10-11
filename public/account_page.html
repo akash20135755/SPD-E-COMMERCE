@@ -356,26 +356,38 @@
         });
 
         document.getElementById('personalInfoForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const formData = {
-                username: event.target.username.value,
-                email: event.target.email.value,
-                phone: event.target.phone.value,
-                address: event.target.address.value, // Include address in the data
-            };
+    event.preventDefault();
 
-            const response = await fetch('/api/update-user', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
+    // Gather form data
+    const formData = {
+        username: event.target.username.value,
+        email: event.target.email.value,
+        phone: event.target.phone.value,
+        address: event.target.address.value, // Include address in the data
+    };
 
-            if (response.ok) {
-                alert('Profile information updated successfully.');
-            } else {
-                alert('Failed to update information.');
-            }
+    try {
+        // Send a POST request to update user info
+        const response = await fetch('/api/update-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
         });
+
+        // Check if the response is OK
+        if (response.ok) {
+            alert('Profile information updated successfully.');
+        } else {
+            // Display an error message and log the response
+            alert('Failed to update information. Please try again.');
+            console.log(await response.text()); // Log the response text for more info
+        }
+    } catch (error) {
+        // Handle any errors that occur during the fetch operation
+        alert('An error occurred while updating your information.');
+        console.error('Error:', error);
+    }
+});
 
         document.getElementById('accountSettingsForm').addEventListener('submit', async (event) => {
             event.preventDefault();
