@@ -51,6 +51,8 @@ const orderSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+const Order = mongoose.model('Order', orderSchema);
+
 // Cart schema and model
 const cartSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
@@ -58,9 +60,6 @@ const cartSchema = new mongoose.Schema({
 });
 
 const Cart = mongoose.model('Cart', cartSchema);
-
-
-const Order = mongoose.model('Order', orderSchema);
 
 // Middleware to check if the user is authenticated
 function isAuthenticated(req, res, next) {
@@ -98,7 +97,6 @@ app.get('/api/products/:name', async (req, res) => {
 });
 
 // Add product to cart
-// Add product to cart
 app.post('/api/cart/add', isAuthenticated, async (req, res) => {
     const { productName, price, quantity } = req.body;
 
@@ -121,7 +119,6 @@ app.post('/api/cart/add', isAuthenticated, async (req, res) => {
 });
 
 // Remove product from cart
-// Remove product from cart
 app.post('/api/cart/remove', isAuthenticated, async (req, res) => {
     const { productName } = req.body;
 
@@ -135,7 +132,6 @@ app.post('/api/cart/remove', isAuthenticated, async (req, res) => {
 });
 
 // Fetch cart contents
-
 app.get('/api/cart', isAuthenticated, async (req, res) => {
     try {
         let cart = await Cart.findOne({ userId: req.session.userId });
@@ -146,57 +142,45 @@ app.get('/api/cart', isAuthenticated, async (req, res) => {
     }
 });
 
-
-// Checkout route
 // Checkout route
 app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
-    const cart = await Cart.findOne({ userId: req.session.userId });
-    if (!cart || cart.items.length === 0) {
-        return res.status(400).json({ message: 'Cart is empty' });
-    }
-
     const { method } = req.body;
 
     try {
-        // Check stock availability
-        for (const item of cart.items) {
-            const product = await Product.findOne({ name: item.productName });
-            if (!product) {
-                return res.status(404).json({ message: `Product ${item.productName} not found` });
-            }
-            if (product.stock < item.quantity) {
-                return res.status(400).json({ message: `Insufficient stock for ${item.productName}` });
-            }
+        const cart = await Cart.findOne({ userId: req.session.userId });
+        if (!cart || cart.items.length === 0) {
+            return res.status(400).json({ message: 'Cart is empty' });
         }
 
-        // Deduct stock and create order
-        const totalAmount = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const newOrder = new Order({
-            userId: req.session.userId,
-            products: cart.items,
-            totalAmount,
-            paymentMethod: method,
-        });
+        const products = await Product.find({ name: { $in: cart.items.map(item => item.productName) } });
+        let totalAmount = 0;
 
-        await newOrder.save();
-
-        // Deduct stock from products
         for (const item of cart.items) {
-            const product = await Product.findOne({ name: item.productName });
+            const product = products.find(p => p.name === item.productName);
+            if (!product || product.stock < item.quantity) {
+                return res.status(400).json({ message: `Insufficient stock for ${item.productName}` });
+            }
+            totalAmount += product.price * item.quantity;
             product.stock -= item.quantity;
             await product.save();
         }
 
-        // Clear cart after checkout
+        const order = new Order({
+            userId: req.session.userId,
+            products: cart.items,
+            totalAmount,
+            paymentMethod: method
+        });
+
+        await order.save();
         await Cart.deleteOne({ userId: req.session.userId });
-        return res.json({ message: 'Order placed successfully', orderId: newOrder._id });
+
+        res.status(200).json({ message: 'Order placed successfully', orderId: order._id });
     } catch (error) {
         console.error('Error during checkout:', error);
-        return res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
-
-
 
 // Register new user
 app.post('/register', async (req, res) => {
@@ -212,32 +196,6 @@ app.post('/register', async (req, res) => {
     } catch (error) {
         console.error('Registration error:', error);
         return res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
-app.post('/api/user/update', isAuthenticated, async (req, res) => {
-    try {
-        // Find the user by session ID and exclude the password field
-        const user = await User.findById(req.session.userId).select('-password');
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Update the user's profile information from the request body
-        const { username, email, phone, address } = req.body;
-        user.username = username || user.username;
-        user.email = email || user.email;
-        user.phone = phone || user.phone;
-        user.address = address || user.address;
-
-        // Save the updated user info
-        await user.save();
-
-        // Respond with success message
-        res.json({ message: 'Profile updated successfully', user });
-    } catch (error) {
-        // Handle any errors
-        console.error('Error updating user profile:', error);
-        res.status(500).json({ message: 'Failed to update profile', error: error.message });
     }
 });
 
@@ -289,53 +247,6 @@ app.post('/logout', (req, res) => {
         }
         res.json({ message: 'Logged out successfully' });
     });
-});
-
-
-// Checkout route
-app.post('/api/cart/checkout', async (req, res) => {
-    const { method } = req.body;
-    const userId = req.session.userId; // Assume userId is stored in session
-
-    if (!userId) {
-        return res.status(401).json({ message: 'User not authenticated' });
-    }
-
-    try {
-        const cart = await Cart.findOne({ userId: userId });
-
-        if (!cart || cart.items.length === 0) {
-            return res.status(400).json({ message: 'Cart is empty' });
-        }
-
-        const products = await Product.find({ name: { $in: cart.items.map(item => item.productName) } });
-        let totalAmount = 0;
-
-        for (const item of cart.items) {
-            const product = products.find(p => p.name === item.productName);
-            if (!product || product.stock < item.quantity) {
-                return res.status(400).json({ message: `Insufficient stock for ${item.productName}` });
-            }
-            totalAmount += product.price * item.quantity;
-            product.stock -= item.quantity;
-            await product.save(); // Update stock in the database
-        }
-
-        const order = new Order({
-            userId: userId,
-            products: cart.items,
-            totalAmount,
-            paymentMethod: method
-        });
-
-        await order.save();
-        await Cart.deleteOne({ userId: userId }); // Clear the cart after checkout
-
-        res.status(200).json({ message: 'Order placed successfully', orderId: order._id });
-    } catch (error) {
-        console.error('Error during checkout:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
 });
 
 // Start server
