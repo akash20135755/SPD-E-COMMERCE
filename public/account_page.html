@@ -321,47 +321,50 @@
             });
         });
 
-        document.getElementById('personalInfoForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const formData = {
-                username: event.target.username.value,
-                email: event.target.email.value,
-                phone: event.target.phone.value,
-                address: event.target.address.value, // Include address in the data
-            };
+        // Update personal information
+document.getElementById('personalInfoForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = {
+        username: event.target.username.value,
+        email: event.target.email.value,
+        phone: event.target.phone.value,
+        address: event.target.address.value, // Include address in the data
+    };
 
-            const response = await fetch('/api/update-user', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
+    const response = await fetch('/api/user/personal-info', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+    });
 
-            if (response.ok) {
-                alert('Profile information updated successfully.');
-            } else {
-                alert('Failed to update information.');
-            }
-        });
+    if (response.ok) {
+        alert('Profile information updated successfully.');
+    } else {
+        alert('Failed to update information.');
+    }
+});
 
-        document.getElementById('accountSettingsForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const formData = {
-                currentPassword: event.target.currentPassword.value,
-                newPassword: event.target.newPassword.value,
-            };
+// Update password
+document.getElementById('accountSettingsForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = {
+        currentPassword: event.target.currentPassword.value,
+        newPassword: event.target.newPassword.value,
+    };
 
-            const response = await fetch('/api/update-password', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
+    const response = await fetch('/api/user/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+    });
 
-            if (response.ok) {
-                alert('Password updated successfully.');
-            } else {
-                alert('Failed to update password.');
-            }
-        });
+    if (response.ok) {
+        alert('Password updated successfully.');
+    } else {
+        alert('Failed to update password.');
+    }
+});
+
 
         document.addEventListener('DOMContentLoaded', fetchUserData);
     </script>

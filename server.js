@@ -214,6 +214,55 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// Update personal information
+app.put('/api/user/personal-info', isAuthenticated, async (req, res) => {
+    const { username, email, phone, address } = req.body;
+
+    try {
+        const user = await User.findById(req.session.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.username = username;
+        user.email = email;
+        user.phone = phone;
+        user.address = address;
+
+        await user.save();
+        res.json({ message: 'Profile information updated successfully' });
+    } catch (error) {
+        console.error('Error updating personal info:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Update password
+app.put('/api/user/password', isAuthenticated, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    try {
+        const user = await User.findById(req.session.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Assuming you are using plain-text passwords for now.
+        // Add password matching logic here.
+        if (user.password !== currentPassword) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        user.password = newPassword; // In production, you should hash the password.
+        await user.save();
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Error updating password:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Fetch logged-in user details
 app.get('/api/user', isAuthenticated, async (req, res) => {
     try {

@@ -5,11 +5,11 @@ const path = require('path');
 const session = require('express-session');
 const app=express();
 
-app.post('api/user/add',aysnc(req,res)=>{
+app.post('api/user/add',async(req,res)=>{
     const {usernsme,email,password}=req.body;
-    cosnt euser=await User.findOne({email});
+    const euser=await User.findOne({email});
     if (!euser){
-        const newuser
+        const newuser={};
     }
 })
  
