@@ -15,62 +15,22 @@ app.use(session({
 }));
 
 // MongoDB connection
-mongoose.connect('mongodb+srv://saran:1234@cluster0.nsdhf.mongodb.net/')
+mongoose.connect('mongodb+srv://saran:1234@cluster0.nsdhf.mongodb.net/spd')
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error('MongoDB connection error:', err));
 
-// User schema and model
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    phone: { type: String },
-    address: { type: String }
-});
+// Models
+const User = require('./models/User');
+const Product = require('./models/Product');
+const Order = require('./models/Order');
+const Cart = require('./models/Cart');
+const Notification = require('./models/Notification');
+const Review = require('./models/review');
 
-const User = mongoose.model('User', userSchema);
+// Middleware for authentication
+const isAuthenticated = require('./middlewares/auth');
 
-// Product schema and model
-const productSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    price: { type: Number, required: true },
-    description: { type: String },
-    stock: { type: Number, required: true },
-    priceInOtherWebsites: [{ website: String, price: Number, link: String }],
-    imageUrl: { type: String }
-});
-
-const Product = mongoose.model('Product', productSchema);
-
-// Order schema and model
-const orderSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-    products: [{ productName: String, price: Number, quantity: Number }],
-    totalAmount: Number,
-    paymentMethod: String,
-    createdAt: { type: Date, default: Date.now }
-});
-
-const Order = mongoose.model('Order', orderSchema);
-
-// Cart schema and model
-const cartSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-    items: [{ productName: String, price: Number, quantity: Number }]
-});
-
-const Cart = mongoose.model('Cart', cartSchema);
-
-// Middleware to check if the user is authenticated
-function isAuthenticated(req, res, next) {
-    if (req.session.userId) {
-        return next();
-    } else {
-        res.status(401).json({ message: 'Unauthorized' });
-    }
-}
-
-// API endpoint to fetch all products
+// Fetch all products
 app.get('/api/products', async (req, res) => {
     try {
         const products = await Product.find({});
@@ -81,7 +41,7 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// API endpoint to fetch a specific product by name
+// Fetch product by name
 app.get('/api/products/:name', async (req, res) => {
     const productName = req.params.name;
     try {
@@ -96,10 +56,50 @@ app.get('/api/products/:name', async (req, res) => {
     }
 });
 
+// Add review for a product
+app.get('/api/products/:productId/reviews', async (req, res) => {
+    const { productId } = req.params;
+
+    try {
+        const reviews = await Review.find({ productId })
+            .populate('userId', 'username') // Populate username from userId
+            .sort({ createdAt: -1 }); // Sort by the latest reviews
+
+        if (!reviews || reviews.length === 0) {
+            return res.status(404).json({ message: 'No reviews found for this product' });
+        }
+
+        res.json(reviews);
+    } catch (error) {
+        console.error('Error fetching reviews:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+// Fetch reviews for a specific product
+app.get('/api/products/:productId/reviews', async (req, res) => {
+    const { productId } = req.params;
+
+    try {
+        const reviews = await Review.find({ productId })
+            .populate('userId', 'username') // Populate username from userId
+            .sort({ createdAt: -1 });
+
+        if (!reviews || reviews.length === 0) {
+            return res.status(404).json({ message: 'No reviews found for this product' });
+        }
+
+        res.json(reviews);
+    } catch (error) {
+        console.error('Error fetching reviews:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Add product to cart
 app.post('/api/cart/add', isAuthenticated, async (req, res) => {
     const { productName, price, quantity } = req.body;
-
     let cart = await Cart.findOne({ userId: req.session.userId });
 
     if (!cart) {
@@ -118,34 +118,9 @@ app.post('/api/cart/add', isAuthenticated, async (req, res) => {
     res.json({ message: 'Product added to cart', cart: cart.items });
 });
 
-// Remove product from cart
-app.post('/api/cart/remove', isAuthenticated, async (req, res) => {
-    const { productName } = req.body;
-
-    let cart = await Cart.findOne({ userId: req.session.userId });
-    if (cart) {
-        cart.items = cart.items.filter(item => item.productName !== productName);
-        await cart.save();
-    }
-
-    res.json({ message: 'Product removed from cart', cart: cart ? cart.items : [] });
-});
-
-// Fetch cart contents
-app.get('/api/cart', isAuthenticated, async (req, res) => {
-    try {
-        let cart = await Cart.findOne({ userId: req.session.userId });
-        res.json(cart ? cart.items : []);
-    } catch (error) {
-        console.error('Error fetching cart:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
 // Checkout route
 app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
     const { method } = req.body;
-
     try {
         const cart = await Cart.findOne({ userId: req.session.userId });
         if (!cart || cart.items.length === 0) {
@@ -174,6 +149,11 @@ app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
 
         await order.save();
         await Cart.deleteOne({ userId: req.session.userId });
+        await Notification.create({
+            userId: req.session.userId,
+            message: 'Order placed successfully.',
+            type: 'order',
+        });
 
         res.status(200).json({ message: 'Order placed successfully', orderId: order._id });
     } catch (error) {
@@ -181,6 +161,7 @@ app.post('/api/cart/checkout', isAuthenticated, async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 
 // Register new user
 app.post('/register', async (req, res) => {
@@ -230,9 +211,15 @@ app.put('/api/user/personal-info', isAuthenticated, async (req, res) => {
         user.address = address;
 
         await user.save();
+        await Notification.create({
+            userId: req.session.userId,
+            message: 'Your personal information has been updated.',
+            type: 'profile',
+        });
         res.json({ message: 'Profile information updated successfully' });
     } catch (error) {
         console.error('Error updating personal info:', error);
+
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -255,7 +242,11 @@ app.put('/api/user/password', isAuthenticated, async (req, res) => {
 
         user.password = newPassword; // In production, you should hash the password.
         await user.save();
-
+        await Notification.create({
+            userId: req.session.userId,
+            message: 'Your personal information has been updated.',
+            type: 'profile',
+        });
         res.json({ message: 'Password updated successfully' });
     } catch (error) {
         console.error('Error updating password:', error);
@@ -296,6 +287,53 @@ app.post('/logout', (req, res) => {
         }
         res.json({ message: 'Logged out successfully' });
     });
+});
+// Add review for a product
+app.post('/api/products/:productId/review', isAuthenticated, async (req, res) => {
+    const { productId } = req.params;
+    const { rating, comment } = req.body;
+
+    try {
+        const review = new Review({
+            userId: req.session.userId,
+            productId,
+            rating,
+            comment
+        });
+
+        await review.save();
+
+        res.status(201).json({ message: 'Review added successfully', review });
+    } catch (error) {
+        console.error('Error adding review:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+// Add review for a product
+app.post('/api/products/:productId/review', isAuthenticated, async (req, res) => {
+    const { productId } = req.params;
+    const { rating, comment } = req.body;
+
+    try {
+        const review = new Review({
+            userId: req.session.userId,
+            productId,
+            rating,
+            comment
+        });
+
+        await review.save();
+
+        res.status(201).json({ message: 'Review added successfully', review });
+    } catch (error) {
+        console.error('Error adding review:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+app.get('/api/notifications', async (req, res) => {
+    const notifications = await Notification.find({ userId: req.session.userId }).sort({ createdAt: -1 });
+    res.json(notifications);
 });
 
 // Start server

@@ -6,7 +6,6 @@
     <title>My Account - E-Commerce</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-       
         * {
             margin: 0;
             padding: 0;
@@ -149,7 +148,6 @@
                 width: 100%;
             }
         }
-    
     </style>
 </head>
 <body>
@@ -173,8 +171,10 @@
                 <li><a href="#" class="nav-link" data-target="personal-info">Personal Information</a></li>
                 <li><a href="#" class="nav-link" data-target="order-history">Order History</a></li>
                 <li><a href="#" class="nav-link" data-target="account-settings">Account Settings</a></li>
+                <li><a href="#" class="nav-link" data-target="notification-section">Notifications</a></li> <!-- Notifications link -->
             </ul>
         </div>
+
         <div class="account-content">
             <section id="personal-info" style="display: block;">
                 <h2>Personal Information</h2>
@@ -205,7 +205,6 @@
                 <br>
                 <div id="orderList"></div>
             </section>
-            
 
             <section id="account-settings" style="display: none;">
                 <h2>Account Settings</h2>
@@ -222,6 +221,13 @@
                     <button type="submit">Update Password</button>
                 </form>
             </section>
+
+            <section id="notification-section" style="display: none;">
+                <h2>Notifications</h2>
+                <div id="notificationContent" class="notification-content">
+                    <!-- Notification messages will appear here -->
+                </div>
+            </section>
         </div>
     </div>
 
@@ -233,42 +239,11 @@
                 document.getElementById('username').value = user.username;
                 document.getElementById('email').value = user.email;
                 document.getElementById('phone').value = user.phone;
-                document.getElementById('address').value = user.address; // Add address field
+                document.getElementById('address').value = user.address;
             } else {
                 console.error('Failed to fetch user data');
             }
         }
-        async function fetchOrderHistory() {
-    const response = await fetch('/api/orders');
-    if (response.ok) {
-        const orders = await response.json();
-        const orderList = document.getElementById('orderList');
-        orderList.innerHTML = '';
-
-        if (orders.length === 0) {
-            orderLi
-            st.innerHTML = '<p>No orders found.</p>';
-            return;
-        }
-
-        orders.forEach(order => {
-            const orderDiv = document.createElement('div');
-            orderDiv.innerHTML = `
-                <h3>Order ID: ${order._id}</h3>
-                <p>Total Amount: ₹${order.totalAmount}</p>
-                <p>Payment Method: ${order.paymentMethod}</p>
-                <p>Ordered On: ${new Date(order.createdAt).toLocaleString()}</p>
-                <h4>Products:</h4>
-                <ul>
-                    ${order.products.map(product => `<li>${product.productName} - ${product.quantity} x ₹${product.price}</li>`).join('')}
-                </ul>
-            `;
-            orderList.appendChild(orderDiv);
-        });
-    } else {
-        console.error('Failed to fetch order history');
-    }
-}
 
         async function fetchOrderHistory() {
             const response = await fetch('/api/orders');
@@ -286,12 +261,12 @@
                     const orderDiv = document.createElement('div');
                     orderDiv.innerHTML = `
                         <h3>Order ID: ${order._id}</h3>
-                        <p>Total Amount: $${order.totalAmount}</p>
+                        <p>Total Amount: ₹${order.totalAmount}</p>
                         <p>Payment Method: ${order.paymentMethod}</p>
                         <p>Ordered On: ${new Date(order.createdAt).toLocaleString()}</p>
                         <h4>Products:</h4>
                         <ul>
-                            ${order.products.map(product => `<li>${product.productName} - ${product.quantity} x $${product.price}</li>`).join('')}
+                            ${order.products.map(product => `<li>${product.productName} - ${product.quantity} x ₹${product.price}</li>`).join('')}
                         </ul>
                     `;
                     orderList.appendChild(orderDiv);
@@ -304,69 +279,48 @@
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (event) => {
                 event.preventDefault();
-                
+
                 // Hide all sections
                 document.querySelectorAll('section').forEach(section => {
                     section.style.display = 'none';
                 });
-                
+
                 // Show the targeted section
                 const targetId = link.getAttribute('data-target');
                 document.getElementById(targetId).style.display = 'block';
 
-                // Fetch order history if the target is order history
-                if (targetId === 'order-history') {
+                // Fetch relevant data when switching to specific sections
+                if (targetId === 'personal-info') {
+                    fetchUserData();
+                } else if (targetId === 'order-history') {
                     fetchOrderHistory();
+                } else if (targetId === 'notification-section') {
+                    fetchNotifications(); // Call the notification function
                 }
             });
         });
 
-        // Update personal information
-document.getElementById('personalInfoForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const formData = {
-        username: event.target.username.value,
-        email: event.target.email.value,
-        phone: event.target.phone.value,
-        address: event.target.address.value, // Include address in the data
-    };
+        async function fetchNotifications() {
+            const response = await fetch('/api/notifications');
+            if (response.ok) {
+                const notifications = await response.json();
+                const notificationContent = document.getElementById('notificationContent');
+                notificationContent.innerHTML = '';
 
-    const response = await fetch('/api/user/personal-info', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-    });
+                if (notifications.length === 0) {
+                    notificationContent.innerHTML = '<p>No notifications available.</p>';
+                    return;
+                }
 
-    if (response.ok) {
-        alert('Profile information updated successfully.');
-    } else {
-        alert('Failed to update information.');
-    }
-});
-
-// Update password
-document.getElementById('accountSettingsForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const formData = {
-        currentPassword: event.target.currentPassword.value,
-        newPassword: event.target.newPassword.value,
-    };
-
-    const response = await fetch('/api/user/password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-    });
-
-    if (response.ok) {
-        alert('Password updated successfully.');
-    } else {
-        alert('Failed to update password.');
-    }
-});
-
-
-        document.addEventListener('DOMContentLoaded', fetchUserData);
+                notifications.forEach(notification => {
+                    const notificationDiv = document.createElement('div');
+                    notificationDiv.innerHTML = `<p>${notification.message}</p>`;
+                    notificationContent.appendChild(notificationDiv);
+                });
+            } else {
+                console.error('Failed to fetch notifications');
+            }
+        }
     </script>
 </body>
 </html>

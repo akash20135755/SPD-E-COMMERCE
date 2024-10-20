@@ -16,7 +16,6 @@
             font-family: 'Roboto', sans-serif;
             background: linear-gradient(135deg, #e0f7fa, #e3f2fd);
             padding: 20px;
-            text-align: center;
         }
 
         .navbar {
@@ -73,35 +72,118 @@
             background-color: #004d40;
         }
 
-        .product-comparison {
+        .product-comparison-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin: 20px auto;
             border: 1px solid #ddd;
             padding: 20px;
             border-radius: 5px;
             background-color: white;
-            max-width: 600px; /* Set a max width for better layout */
+            max-width: 1000px;
         }
 
-        .product-comparison img {
-            width: 100%; /* Make image responsive */
+        .product-image {
+            flex: 1;
+            padding-right: 20px;
+        }
+
+        .product-image img {
+            width: 100%;
             height: auto;
-            margin-bottom: 20px;
+            border-radius: 5px;
         }
 
-        .product-comparison h2 {
-            margin: 0 0 10px;
+        .product-details {
+            flex: 2;
+            text-align: left;
+        }
+
+        .product-details h2 {
+            margin-bottom: 10px;
         }
 
         .price-list {
             list-style-type: none;
             padding: 0;
-            text-align: left; /* Align prices to the left */
-            margin: 0 auto; /* Center the list */
-            max-width: 300px; /* Set max width for the list */
+            margin: 0;
         }
 
-        .price-list li {
+        .price-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ddd;
+            background-color: #f7f7f7;
+            border-radius: 5px;
+            padding: 10px;
             margin-bottom: 10px;
+        }
+
+        .price-box a {
+            color: #00796b;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .product-description {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f7f7f7;
+            border-radius: 5px;
+        }
+
+        .reviews {
+            text-align: left;
+            margin-top: 30px;
+        }
+
+        .review-item {
+            background-color: #f1f8e9;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .review-item h4 {
+            margin-bottom: 5px;
+        }
+
+        .review-item p {
+            margin: 0;
+        }
+
+        .add-review {
+            margin-top: 30px;
+        }
+
+        .add-review form {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-top: 10px;
+        }
+
+        .add-review input, .add-review textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .add-review button {
+            padding: 10px 15px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .add-review button:hover {
+            background-color: #004d40;
         }
 
         .go-back {
@@ -134,53 +216,147 @@
         </ul>
     </nav>
 
-    <div id="comparison-container"></div>
+    <div class="product-comparison-container" id="comparison-container"></div>
+    <div class="reviews" id="review-section"></div>
+
+    <!-- Add review section -->
+    <div class="add-review">
+        <h3>Leave a Review</h3>
+        <form id="review-form">
+            <input type="number" id="rating" name="rating" placeholder="Rating (1-5)" min="1" max="5" required>
+            <textarea id="comment" name="comment" rows="4" placeholder="Write your review..." required></textarea>
+            <button type="submit">Submit Review</button>
+        </form>
+    </div>
+
     <button class="go-back" onclick="window.location.href='home_page.html'">Go Back</button>
 
     <script>
-        async function fetchProductComparison(productName) {
-            try {
-                const response = await fetch(`/api/products/${encodeURIComponent(productName)}`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching product comparison:', error);
-                return null;
-            }
-        }
+  const fetchedProducts = new Set();
 
-        async function renderComparison() {
+// Helper function to get URL parameters
+function getURLParameter(name) {
     const params = new URLSearchParams(window.location.search);
-    const productName = params.get('product');
-    const product = await fetchProductComparison(productName);
+    return params.get(name);
+}
 
-    if (product) {
-        const comparisonContainer = document.getElementById('comparison-container');
-        const productComparison = document.createElement('div');
-        productComparison.classList.add('product-comparison');
-
-        productComparison.innerHTML = `
-            <img src="${product.imageUrl}" alt="${product.name}">
-            <div>
-                <h2>${product.name}</h2>
-                <ul class="price-list">
-                    ${product.priceInOtherWebsites.map(site => `
-                        <li>
-                            <strong>${site.website}</strong>: 
-                            ₹${site.price} - 
-                            <a href="${site.Link}" target="_blank">Buy Now</a>
-                        </li>
-                    `).join('')}
-                </ul>
-            </div>
-        `;
-        comparisonContainer.appendChild(productComparison);
-    } else {
-        document.getElementById('comparison-container').innerHTML = '<p>Product not found.</p>';
+// Fetch product details for comparison
+async function fetchProductComparison(productName) {
+    try {
+        const response = await fetch(`/api/products/${encodeURIComponent(productName)}`);
+        if (!response.ok) throw new Error('Product not found');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching product comparison:', error);
+        return null;
     }
 }
 
-        renderComparison();
+// Fetch product reviews
+async function fetchProductReviews(productId) {
+    try {
+        const response = await fetch(`/api/products/${productId}/reviews`);
+        if (!response.ok) throw new Error('Error fetching reviews');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching reviews:', error);
+        return [];
+    }
+}
+
+// Render product comparison on the page
+async function renderComparison() {
+    const productName = getURLParameter('product');
+
+    if (!fetchedProducts.has(productName)) {
+        const product = await fetchProductComparison(productName);
+
+        if (product) {
+            const comparisonContainer = document.getElementById('comparison-container');
+            const productComparison = document.createElement('div');
+            productComparison.classList.add('product-comparison');
+
+            productComparison.innerHTML = `
+                <div class="product-image">
+                    <img src="${product.imageUrl}" alt="${product.name}">
+                </div>
+                <div class="product-details">
+                    <h2>${product.name}</h2>
+                    <div class="product-description">${product.description}</div>
+                    <div class="price-list">
+                        ${product.priceInOtherWebsites.map(site => `
+                            <div class="price-box">
+                                <strong>${site.website}</strong>: 
+                                ₹${site.price} - 
+                                <a href="${site.Link}" target="_blank">Buy Now</a>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            comparisonContainer.appendChild(productComparison);
+            fetchedProducts.add(productName);
+
+            // Fetch and render reviews
+            const reviews = await fetchProductReviews(product._id);
+            renderReviews(reviews);
+        } else {
+            document.getElementById('comparison-container').innerHTML = `<p>Product not found.</p>`;
+        }
+    }
+}
+
+// Render reviews for the product
+function renderReviews(reviews) {
+    const reviewSection = document.getElementById('review-section');
+    reviewSection.innerHTML = `<h3>Reviews</h3>`;
+
+    if (reviews.length > 0) {
+        reviews.forEach(review => {
+            const reviewItem = document.createElement('div');
+            reviewItem.classList.add('review-item');
+            reviewItem.innerHTML = `
+                <h4>${review.userId.username || 'Anonymous'}</h4>
+                <p>Rating: ${review.rating} / 5</p>
+                <p>${review.comment}</p>
+            `;
+            reviewSection.appendChild(reviewItem);
+        });
+    } else {
+        reviewSection.innerHTML += `<p>No reviews available for this product yet.</p>`;
+    }
+}
+
+// Handle review form submission
+document.getElementById('review-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const productId = getURLParameter('productId');
+    const rating = document.getElementById('rating').value;
+    const comment = document.getElementById('comment').value;
+
+    try {
+        const response = await fetch(`/api/products/${productId}/reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rating, comment })
+        });
+
+        if (!response.ok) throw new Error('Error submitting review');
+        const result = await response.json();
+        console.log('Review submitted successfully:', result);
+
+        alert('Review submitted successfully!');
+        renderReviews(await fetchProductReviews(productId)); // Update reviews without reload
+    } catch (error) {
+        console.error('Error submitting review:', error);
+        alert('Failed to submit review');
+    }
+});
+
+// Call renderComparison to populate page content
+renderComparison();
+
     </script>
 </body>
 </html>
