@@ -230,141 +230,151 @@
     </div>
 
     <button class="go-back" onclick="window.location.href='home_page.html'">Go Back</button>
-
     <script>
-  // Set to keep track of fetched products to avoid duplicate requests
-const fetchedProducts = new Set();
-
-// Helper function to get URL parameters
-function getURLParameter(name) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(name);
-}
-
-// Fetch product details for comparison
-async function fetchProductComparison(productName) {
-    try {
-        const response = await fetch(`/api/products/${encodeURIComponent(productName)}`);
-        if (!response.ok) throw new Error('Product not found');
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching product comparison:', error);
-        return null;
-    }
-}
-
-// Fetch product reviews
-async function fetchProductReviews(productId) {
-    try {
-        const response = await fetch(`/api/products/${productId}/reviews`);
-        if (!response.ok) throw new Error('Error fetching reviews');
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching reviews:', error);
-        return [];
-    }
-}
-
-// Render product comparison on the page
-async function renderComparison() {
-    const productName = getURLParameter('product');
-
-    if (!fetchedProducts.has(productName)) {
-        const product = await fetchProductComparison(productName);
-
-        if (product) {
-            const comparisonContainer = document.getElementById('comparison-container');
-            const productComparison = document.createElement('div');
-            productComparison.classList.add('product-comparison');
-
-            productComparison.innerHTML = `
-                <div class="product-image">
-                    <img src="${product.imageUrl}" alt="${product.name}">
-                </div>
-                <div class="product-details">
-                    <h2>${product.name}</h2>
-                    <div class="product-description">${product.description}</div>
-                    <div class="price-list">
-                        ${product.priceInOtherWebsites.map(site => `
-                            <div class="price-box">
-                                <strong>${site.website}</strong>: 
-                                ₹${site.price} - 
-                                <a href="${site.Link}" target="_blank">Buy Now</a>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            comparisonContainer.appendChild(productComparison);
-            fetchedProducts.add(productName);
-
-            // Fetch and render reviews
-            const reviews = await fetchProductReviews(product._id);
-            renderReviews(reviews);
-        } else {
-            document.getElementById('comparison-container').innerHTML = `<p>Product not found.</p>`;
+        const fetchedProducts = new Set();
+    
+        // Helper function to get URL parameters
+        function getURLParameter(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
         }
-    }
-}
-
-// Render reviews for the product
-function renderReviews(reviews) {
-    const reviewSection = document.getElementById('review-section');
-    reviewSection.innerHTML = `<h3>Reviews</h3>`;
-
-    if (reviews.length > 0) {
-        reviews.forEach(review => {
-            const reviewItem = document.createElement('div');
-            reviewItem.classList.add('review-item');
-            reviewItem.innerHTML = `
-                <h4>${review.userId.username || 'Anonymous'}</h4>
-                <p>Rating: ${review.rating} / 5</p>
-                <p>${review.comment}</p>
-            `;
-            reviewSection.appendChild(reviewItem);
+    
+        // Fetch product details for comparison
+        async function fetchProductComparison(productName) {
+            try {
+                const response = await fetch(`/api/products/${encodeURIComponent(productName)}`);
+                if (!response.ok) throw new Error('Product not found');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching product comparison:', error);
+                return null;
+            }
+        }
+    
+        // Fetch product reviews
+        async function fetchProductReviews(productId) {
+            try {
+                const response = await fetch(`/api/products/${productId}/reviews`);
+                if (!response.ok) throw new Error('Error fetching reviews');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching reviews:', error);
+                return [];
+            }
+        }
+    
+        // Render product comparison on the page
+        async function renderComparison() {
+            const productName = getURLParameter('product');
+    
+            if (!fetchedProducts.has(productName)) {
+                const product = await fetchProductComparison(productName);
+    
+                if (product) {
+                    const comparisonContainer = document.getElementById('comparison-container');
+                    const productComparison = document.createElement('div');
+                    productComparison.classList.add('product-comparison');
+    
+                    productComparison.innerHTML = `
+                        <div class="product-image">
+                            <img src="${product.imageUrl}" alt="${product.name}">
+                        </div>
+                        <div class="product-details">
+                            <h2>${product.name}</h2>
+                            <div class="product-description">${product.description}</div>
+                            <div class="price-list">
+                                ${product.priceInOtherWebsites.map(site => `
+                                    <div class="price-box">
+                                        <strong>${site.website}</strong>: 
+                                        ₹${site.price} - 
+                                        <a href="${site.Link}" target="_blank">Buy Now</a>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+    
+                    comparisonContainer.appendChild(productComparison);
+                    fetchedProducts.add(productName);
+    
+                    // Set product ID as a data attribute on the form for later use
+                    document.getElementById('review-form').dataset.productId = product._id;
+    
+                    // Fetch and render reviews, passing product._id directly to renderReviews
+                    const reviews = await fetchProductReviews(product._id);
+                    renderReviews(reviews);
+                } else {
+                    document.getElementById('comparison-container').innerHTML = `<p>Product not found.</p>`;
+                }
+            }
+        }
+    
+        // Render reviews for the product
+        function renderReviews(reviews) {
+            const reviewSection = document.getElementById('review-section');
+            reviewSection.innerHTML = `<h3>Reviews</h3>`; // Clear previous content
+    
+            if (reviews.length > 0) {
+                reviews.forEach(review => {
+                    const reviewItem = document.createElement('div');
+                    reviewItem.classList.add('review-item');
+                    reviewItem.innerHTML = `
+                        <h4>${review.userId?.username || 'Anonymous'}</h4>
+                        <p>Rating: ${review.rating} / 5</p>
+                        <p>${review.comment}</p>
+                    `;
+                    reviewSection.appendChild(reviewItem);
+                });
+            } else {
+                reviewSection.innerHTML += `<p>No reviews available for this product yet.</p>`;
+            }
+        }
+    
+        // Handle review form submission
+        document.getElementById('review-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+    
+            // Retrieve productId from the form data attribute
+            const productId = document.getElementById('review-form').dataset.productId;
+            console.log("product id is", productId);
+    
+            const rating = document.getElementById('rating').value;
+            const comment = document.getElementById('comment').value;
+    
+            // Validate productId
+            if (!productId || productId.length !== 24) {
+                alert('Invalid product ID. Please try again.');
+                return;
+            }
+    
+            try {
+                const response = await fetch(`/api/products/${productId}/review`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating, comment })
+                });
+    
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Error submitting review');
+                }
+    
+                const result = await response.json();
+                console.log('Review submitted successfully:', result);
+                alert('Review submitted successfully!');
+                renderReviews(await fetchProductReviews(productId)); // Refresh reviews
+            } catch (error) {
+                console.error('Error submitting review:', error);
+                alert('Failed to submit review: ' + error.message);
+            }
         });
-    } else {
-        reviewSection.innerHTML += `<p>No reviews available for this product yet.</p>`;
-    }
-}
-
-// Handle review form submission
-document.getElementById('review-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const productId = getURLParameter('productId');
-    const rating = document.getElementById('rating').value;
-    const comment = document.getElementById('comment').value;
-
-    // Optionally disable the submit button and show loading indication
-    const submitButton = document.getElementById('submit-review-button');
-    submitButton.disabled = true;
-
-    try {
-        const response = await fetch(`/api/products/${productId}/review`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rating, comment })
-        });
-
-        if (!response.ok) throw new Error('Error submitting review');
-        const result = await response.json();
-        console.log('Review submitted successfully:', result);
-
-        alert('Review submitted successfully!');
-        renderReviews(await fetchProductReviews(productId)); // Update reviews without reload
-    } catch (error) {
-        console.error('Error submitting review:', error);
-        alert('Failed to submit review');
-    } finally {
-        submitButton.disabled = false; // Re-enable the button
-    }
-});
-
-// Call renderComparison to populate page content
-renderComparison();
-
-
+    
+        // Call renderComparison to populate page content
+        renderComparison();
+    
     </script>
+    
 </body>
 </html>
+
+
