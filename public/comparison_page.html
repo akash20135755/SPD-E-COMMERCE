@@ -78,10 +78,10 @@
             align-items: flex-start;
             margin: 20px auto;
             border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 5px;
+            padding-left: 10px;
+            padding-right: 10px;
             background-color: white;
-            max-width: 1000px;
+            max-width: 750px;
         }
 
         .product-image {
@@ -134,57 +134,99 @@
             border-radius: 5px;
         }
 
-        .reviews {
-            text-align: left;
-            margin-top: 30px;
-        }
+      /* Review Section */
+.reviews {
+    text-align: left;
+    margin-top: 30px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
+    background-color: #e3f2fd;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
 
-        .review-item {
-            background-color: #f1f8e9;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-        }
+.reviews h3 {
+    font-size: 1.5rem;
+    color: #00796b;
+    margin-bottom: 20px;
+}
 
-        .review-item h4 {
-            margin-bottom: 5px;
-        }
+.review-item {
+    background-color: #f1f8e9;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+}
 
-        .review-item p {
-            margin: 0;
-        }
+.review-item h4 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #004d40;
+    margin-bottom: 8px;
+}
 
-        .add-review {
-            margin-top: 30px;
-        }
+.review-item p {
+    font-size: 1rem;
+    color: #333;
+    line-height: 1.4;
+}
 
-        .add-review form {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            margin-top: 10px;
-        }
+.review-item .rating {
+    font-weight: bold;
+    color: #ff8f00;
+}
 
-        .add-review input, .add-review textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
+/* Add Review Section */
+.add-review {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f7f7f7;
+    border-radius: 10px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
 
-        .add-review button {
-            padding: 10px 15px;
-            background-color: #00796b;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+.add-review h3 {
+    font-size: 1.5rem;
+    color: #00796b;
+    margin-bottom: 15px;
+}
 
-        .add-review button:hover {
-            background-color: #004d40;
-        }
+.add-review form {
+    display: flex;
+    flex-direction: column;
+}
+
+.add-review input,
+.add-review textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+}
+
+.add-review button {
+    padding: 10px 15px;
+    background-color: #00796b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.add-review button:hover {
+    background-color: #004d40;
+}
+
 
         .go-back {
             margin-top: 20px;
@@ -194,6 +236,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-left: 225px;
         }
 
         .go-back:hover {
@@ -376,5 +419,6 @@
     
 </body>
 </html>
+
 
 

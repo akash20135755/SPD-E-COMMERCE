@@ -343,7 +343,7 @@ app.post('/api/products/:productId/review', isAuthenticated, async (req, res) =>
 app.get('/api/products/:productId/reviews', async (req, res) => {
     const { productId } = req.params;
     try {
-        const reviews = await Review.find({ productId });
+        const reviews = await Review.find({ productId }).populate('userId','username');
         res.json(reviews);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch reviews' });
