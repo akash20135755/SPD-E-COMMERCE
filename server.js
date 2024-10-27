@@ -16,6 +16,7 @@ app.use(session({
 
 // MongoDB connection
 mongoose.connect('mongodb+srv://saran:1234@cluster0.nsdhf.mongodb.net/')
+// mongoose.connect('mongodb://localhost:27017/spd/')
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error('MongoDB connection error:', err));
 
@@ -50,6 +51,26 @@ app.get('/api/products/:name', async (req, res) => {
         res.json(product);
     } catch (error) {
         console.error('Error fetching product:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+// API endpoint for product search based on name, category, or description
+app.get('/api/products/search', async (req, res) => {
+    const { query } = req.query; // Get the search query from the request
+
+    try {
+        // Find products where name, category, or description contains the query (case-insensitive)
+        const products = await Product.find({
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { category: { $regex: query, $options: 'i' } },
+                { description: { $regex: query, $options: 'i' } }
+            ]
+        });
+
+        res.json(products); // Return the matched products
+    } catch (error) {
+        console.error('Error during search:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });

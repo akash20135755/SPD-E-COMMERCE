@@ -232,7 +232,8 @@
     <button class="go-back" onclick="window.location.href='home_page.html'">Go Back</button>
 
     <script>
-  const fetchedProducts = new Set();
+  // Set to keep track of fetched products to avoid duplicate requests
+const fetchedProducts = new Set();
 
 // Helper function to get URL parameters
 function getURLParameter(name) {
@@ -335,8 +336,12 @@ document.getElementById('review-form').addEventListener('submit', async (e) => {
     const rating = document.getElementById('rating').value;
     const comment = document.getElementById('comment').value;
 
+    // Optionally disable the submit button and show loading indication
+    const submitButton = document.getElementById('submit-review-button');
+    submitButton.disabled = true;
+
     try {
-        const response = await fetch(`/api/products/${productId}/reviews`, {
+        const response = await fetch(`/api/products/${productId}/review`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ rating, comment })
@@ -351,11 +356,14 @@ document.getElementById('review-form').addEventListener('submit', async (e) => {
     } catch (error) {
         console.error('Error submitting review:', error);
         alert('Failed to submit review');
+    } finally {
+        submitButton.disabled = false; // Re-enable the button
     }
 });
 
 // Call renderComparison to populate page content
 renderComparison();
+
 
     </script>
 </body>

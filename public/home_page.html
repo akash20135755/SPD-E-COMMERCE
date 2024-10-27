@@ -71,12 +71,38 @@
         .search-form button:hover {
             background-color: #004d40;
         }
+
+        .category-container {
+            display: flex;
+            gap: 15px;
+            padding: 20px 0;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        .category-card {
+            flex: 0 0 auto;
+            width: 150px;
+            background-color: #00796b;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .category-card:hover {
+            background-color: #004d40;
+        }
+
         .product-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
             padding: 20px;
         }
+
         .product-card {
             background-color: #ffffff;
             border: 1px solid #ddd;
@@ -85,24 +111,29 @@
             text-align: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .product-card img {
             width: 100%;
             height: auto;
             border-radius: 8px;
         }
+
         .product-card h3 {
             margin: 10px 0;
             font-size: 1.2em;
         }
+
         .product-card p {
             font-size: 1.1em;
             color: #28a745;
         }
+
         .product-card input {
             width: 50px;
             margin: 10px 0;
             text-align: center;
         }
+
         .product-card button,
         .product-card a {
             padding: 10px;
@@ -111,10 +142,12 @@
             cursor: pointer;
             margin: 5px;
         }
+
         .product-card button {
             background-color: #007bff;
             color: white;
         }
+
         .compare-button {
             background-color: #ffc107;
             color: white;
@@ -125,7 +158,7 @@
 <body>
     <nav class="navbar">
         <div class="navbar-brand">E-Kart</div>
-        <form class="search-form" action="/search" method="GET">
+        <form class="search-form" method="GET">
             <input type="text" placeholder="Search..." name="query" required>
             <button type="submit">Search</button>
         </form>
@@ -135,7 +168,16 @@
             <li><a href="account_page.html">My Account</a></li>
         </ul>
     </nav>
-   
+
+    <!-- Category Container -->
+    <div class="category-container">
+        <div class="category-card" onclick="filterCategory('Mobile')">Mobile</div>
+        <div class="category-card" onclick="filterCategory('Laptop')">Laptop</div>
+        <div class="category-card" onclick="filterCategory('Tablet')">Tablet</div>
+        <div class="category-card" onclick="filterCategory('Accessories')">Accessories</div>
+    </div>
+
+    <!-- Product Grid -->
     <div id="product-grid" class="product-grid"></div>
 
     <script>
@@ -143,71 +185,77 @@
             try {
                 const response = await fetch('/api/products');
                 if (!response.ok) throw new Error('Network response was not ok');
-                const products = await response.json();
-                return products;
+                return await response.json();
             } catch (error) {
                 console.error('Error fetching products:', error);
                 return [];
             }
         }
 
-        async function renderProducts() {
-    try {
-        const products = await fetchProducts();
-        const productGrid = document.getElementById('product-grid');
-        productGrid.innerHTML = '';
+        async function renderProducts(category = null) {
+            const products = await fetchProducts();
+            const productGrid = document.getElementById('product-grid');
+            productGrid.innerHTML = '';
 
-        products.forEach((product) => {
-            const productCard = document.createElement('div');
-            productCard.classList.add('product-card');
+            const filteredProducts = category
+                ? products.filter(product => product.category === category)
+                : products;
 
-            const compareButton = document.createElement('button');
-            compareButton.innerText = 'Compare';
-            compareButton.onclick = () => {
-                window.location.href = `comparison_page.html?product=${encodeURIComponent(product.name)}`;
-            };
+            filteredProducts.forEach((product) => {
+                const productCard = document.createElement('div');
+                productCard.classList.add('product-card');
 
-            productCard.innerHTML = `
-                <img src="${product.imageUrl}" alt="${product.name}">
-                <h3>${product.name}</h3>
-                <p>₹${product.price}</p>
+                const compareButton = document.createElement('button');
+                compareButton.classList.add('compare-button');
+                compareButton.innerText = 'Compare';
+                compareButton.addEventListener('click', () => {
+                    window.location.href = `comparison_page.html?product=${encodeURIComponent(product.name)}`;
+                });
 
-                <input type="number" value="1" min="1">
-                <button onclick="addToCart('${product.name}', ${product.price}, event)">Add to Cart</button>
-            `;
+                productCard.innerHTML = `
+                    <img src="${product.imageUrl}" alt="${product.name}">
+                    <h3>${product.name}</h3>
+                    <p>₹${product.price}</p>
+                    <input type="number" value="1" min="1">
+                    <button class="add-to-cart-btn">Add to Cart</button>
+                `;
 
-            productCard.appendChild(compareButton);
-            productGrid.appendChild(productCard);
-        });
-    } catch (error) {
-        console.error('Error rendering products:', error);
-        const productGrid = document.getElementById('product-grid');
-        productGrid.innerHTML = '<p>Failed to load products. Please try again later.</p>';
-    }
-}
+                productCard.appendChild(compareButton);
+                productGrid.appendChild(productCard);
 
-async function addToCart(productName, price, event) {
-    const inputField = event.target.previousElementSibling; // Get the quantity input field
-    const quantity = parseInt(inputField.value); // Get the quantity
+                const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
+                addToCartBtn.addEventListener('click', (event) => addToCart(product.name, product.price, event));
+            });
+        }
 
-    if (isNaN(quantity) || quantity <= 0) {
-        alert("Please enter a valid quantity."); // Validation
-        return;
-    }
+        function filterCategory(category) {
+            renderProducts(category);
+        }
 
-    await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ productName, price, quantity })
-    });
+        async function addToCart(productName, price, event) {
+            const inputField = event.target.previousElementSibling;
+            const quantity = parseInt(inputField.value);
 
-    // Optionally update a cart icon or message here
-}
+            if (isNaN(quantity) || quantity <= 0) {
+                alert("Please enter a valid quantity.");
+                return;
+            }
+
+            try {
+                await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ productName, price, quantity })
+                });
+                alert("Product added to cart!");
+            } catch (error) {
+                console.error('Error adding to cart:', error);
+            }
+        }
 
         renderProducts();
     </script>
 </body>
 </html>
-
