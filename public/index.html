@@ -4,7 +4,140 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-kart</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            background-image: url('image/background.jpg');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 5px;
+            margin-top: 10px;
+            text-transform: uppercase;
+            animation: fadeIn 1.5s;
+            letter-spacing: 2px;
+            font-size: 40px;
+        }
+
+        h3 {
+            font-family: 'Merriweather', serif;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 30px;
+            margin-top: 5px;
+            text-transform: uppercase;
+            animation: fadeIn 1.5s;
+            font-style: italic;
+            font-size: 24px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-form {
+            background-color: rgba(255, 255, 255, 0.75);
+            padding: 40px;
+            border-radius: 40px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            width: 320px;
+            margin: 30px;
+            animation: slideIn 1.5s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-form h2 {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: calc(100% + 10px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+            margin-right: 5px;
+        }
+
+        .input-group input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 12px;
+        }
+
+        p {
+            margin-top: 15px;
+        }
+
+        p a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        p a:hover {
+            text-decoration: underline;
+        }
+    </style>
+
 </head>
 <body>
     <div class="login-container">

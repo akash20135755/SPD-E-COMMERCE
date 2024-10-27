@@ -148,6 +148,106 @@
                 width: 100%;
             }
         }
+
+        .notification-content {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .notification-content p {
+            margin: 10px 0;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .order-history {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .order-history h3 {
+            font-size: 1.5rem;
+            color: #00796b;
+            margin-bottom: 10px;
+        }
+
+        .order-history p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .order-history ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .order-history .order-block {
+            background-color: #e0f2f1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Text Styles for Account Sections */
+        .account-content h2 {
+            font-size: 1.8rem; /* Larger font size for section headings */
+            color: #00796b; /* Consistent color with the navbar */
+            margin-bottom: 10px; /* Space below headings */
+        }
+
+        .account-content h3 {
+            font-size: 1.5rem; /* Font size for order ID and other sub-headings */
+            color: #004d40; /* Darker shade for contrast */
+            margin-bottom: 5px; /* Space below sub-headings */
+        }
+
+        .account-content h4 {
+            font-size: 1.2rem; /* Slightly smaller for product list headings */
+            color: #00695c; /* Another shade of green for differentiation */
+            margin-bottom: 5px; /* Space below product headings */
+        }
+
+        .notification-content p {
+            font-size: 1rem; /* Standard size for notification messages */
+            line-height: 1.5; /* Improved line spacing for readability */
+            color: #555; /* Dark gray for softer contrast */
+        }
+
+        /* General text styles for inputs and buttons */
+        .input-group label {
+            font-weight: 500; /* Bold for emphasis */
+            color: #333; /* Dark color for labels */
+        }
+
+        .input-group input {
+            font-size: 1rem; /* Standard size for input text */
+            color: #333; /* Dark text for input fields */
+        }
+
+        button {
+            font-size: 1rem; /* Standard size for button text */
+            font-weight: 600; /* Slightly bolder for emphasis */
+        }
+
+        /* Order list items */
+        .order-history ul {
+            padding-left: 20px; /* Indent for product list */
+        }
+
+        .order-history li {
+            margin: 5px 0; /* Space between list items */
+            color: #555; /* Dark gray for list items */
+            font-size: 0.95rem; /* Slightly smaller for list items */
+        }
     </style>
 </head>
 <body>
@@ -200,12 +300,7 @@
                 </form>
             </section>
 
-            <section id="order-history" style="display: none;">
-                <h2>Order History</h2>
-                <br>
-                <div id="orderList"></div>
-            </section>
-
+         
             <section id="account-settings" style="display: none;">
                 <h2>Account Settings</h2>
                 <form id="accountSettingsForm">
@@ -221,11 +316,18 @@
                     <button type="submit">Update Password</button>
                 </form>
             </section>
+            <section id="order-history" style="display: none;">
+                <h2>Order History</h2>
+                <div id="orderList" class="order-history">
+                    <!-- Order details will be populated here -->
+                </div>
+            </section>
 
+            
             <section id="notification-section" style="display: none;">
                 <h2>Notifications</h2>
                 <div id="notificationContent" class="notification-content">
-                    <!-- Notification messages will appear here -->
+                    <!-- Notifications will be populated here -->
                 </div>
             </section>
         </div>
@@ -286,7 +388,7 @@ document.getElementById('accountSettingsForm').addEventListener('submit', async 
         alert('Failed to update password.');
     }
 });
-        async function fetchOrderHistory() {
+async function fetchOrderHistory() {
             const response = await fetch('/api/orders');
             if (response.ok) {
                 const orders = await response.json();
@@ -300,6 +402,7 @@ document.getElementById('accountSettingsForm').addEventListener('submit', async 
 
                 orders.forEach(order => {
                     const orderDiv = document.createElement('div');
+                    orderDiv.classList.add('order-block'); // Add a class for styling
                     orderDiv.innerHTML = `
                         <h3>Order ID: ${order._id}</h3>
                         <p>Total Amount: ₹${order.totalAmount}</p>
@@ -314,6 +417,28 @@ document.getElementById('accountSettingsForm').addEventListener('submit', async 
                 });
             } else {
                 console.error('Failed to fetch order history');
+            }
+        }
+
+        async function fetchNotifications() {
+            const response = await fetch('/api/notifications'); // Adjust the API endpoint as necessary
+            if (response.ok) {
+                const notifications = await response.json();
+                const notificationContent = document.getElementById('notificationContent');
+                notificationContent.innerHTML = '';
+
+                if (notifications.length === 0) {
+                    notificationContent.innerHTML = '<p>No notifications available.</p>';
+                    return;
+                }
+
+                notifications.forEach(notification => {
+                    const notificationElement = document.createElement('p');
+                    notificationElement.textContent = notification.message; // Assuming each notification has a 'message' field
+                    notificationContent.appendChild(notificationElement);
+                });
+            } else {
+                console.error('Failed to fetch notifications');
             }
         }
 
@@ -341,27 +466,7 @@ document.getElementById('accountSettingsForm').addEventListener('submit', async 
             });
         });
 
-        async function fetchNotifications() {
-            const response = await fetch('/api/notifications');
-            if (response.ok) {
-                const notifications = await response.json();
-                const notificationContent = document.getElementById('notificationContent');
-                notificationContent.innerHTML = '';
-
-                if (notifications.length === 0) {
-                    notificationContent.innerHTML = '<p>No notifications available.</p>';
-                    return;
-                }
-
-                notifications.forEach(notification => {
-                    const notificationDiv = document.createElement('div');
-                    notificationDiv.innerHTML = `<p>${notification.message}</p>`;
-                    notificationContent.appendChild(notificationDiv);
-                });
-            } else {
-                console.error('Failed to fetch notifications');
-            }
-        }
+       
     </script>
 </body>
 </html>
